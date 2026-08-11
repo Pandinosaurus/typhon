@@ -834,7 +834,7 @@ class SPAREICE:
             ax.set_ylim([0, 200])
             statistic = "median"
         else:
-            ax.set_ylabel("$\Delta$ IWP (SPARE-ICE - 2C-ICE) [log 10 g/m^2]")
+            ax.set_ylabel(r"$\Delta$ IWP (SPARE-ICE - 2C-ICE) [log 10 g/m^2]")
             statistic = "mean"
 
         for hemisphere in ["global"]:

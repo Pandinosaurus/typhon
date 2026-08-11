@@ -212,7 +212,7 @@ class Collocator:
         # match, the process pushes its results to the result queue. If errors
         # are raised during collocating, the raised errors are pushed to the
         # error queue,
-        matches_chunks = np.array_split(matches, processes)
+        matches_chunks = np.array_split(np.array(matches, dtype=object), processes)
 
         # This queue collects all results:
         results = Queue(maxsize=processes)
@@ -1038,7 +1038,7 @@ class Collocator:
         # to use them as indices later.
         for dim in dims:
             if dim not in data.coords:
-                data[dim] = dim, np.arange(data.dims[dim])
+                data[dim] = dim, np.arange(data.sizes[dim])
 
         # We assume that coordinates must be unique! Otherwise, we would have
         # to use this ugly work-around:

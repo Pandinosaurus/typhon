@@ -14,5 +14,5 @@ class TestNonlte:
         y = np.random.random(10)
 
         area = nonlte.mathmatics.trapz_inte_edge(y, x)
-        area_ref = np.trapz(y, x)
+        area_ref = np.trapezoid(y, x)
         assert np.allclose(area.sum(), area_ref)

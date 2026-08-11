@@ -23,6 +23,10 @@ __all__ = [
     'wavelength2wavenumber',
     'wavenumber2frequency',
     'wavenumber2wavelength',
+    'perfrequency2perwavelength',
+    'perwavelength2perfrequency',
+    'perfrequency2perwavenumber',
+    'perwavenumber2perfrequency',
     'stefan_boltzmann_law',
     'zeeman_splitting',
     'zeeman_strength',
@@ -158,7 +162,7 @@ def radiance2rayleighjeansTb(f, r):
 
 
 def snell(n1, n2, theta1):
-    """Calculates the angle of the transmitted wave, according to Snell's law.
+    r"""Calculates the angle of the transmitted wave, according to Snell's law.
 
     Snell's law for the case when both *n1* and *n2* have no imaginary part
     is found in all physics handbooks.
@@ -349,6 +353,78 @@ def wavenumber2wavelength(wavenumber):
     return np.divide(1, wavenumber)
 
 
+def perfrequency2perwavelength(perhz, f_grid):
+    """Conversion between Frequency- and Wavelength-related Spectral Quantities.
+
+    Parameters:
+        perhz (ndarray)[nf_grid, ...]: Quantity per frequency [?/Hz].
+        f_grid (1darray)[nf_grid]: Frequency grid [Hz].
+    Returns:
+        ndarray[nf_grid, ...]: Quantity per wavelength [?/m].
+        1darray[nf_grid]: Wavelength grid [m]. 
+
+    """
+    c = constants.speed_of_light
+    ndim = len(perhz.shape) - 1
+    shape = (perhz.shape[0], ) + ndim * (1, )
+    perm = perhz * f_grid.reshape(shape)**2 / c
+    lam_grid = frequency2wavelength(f_grid)
+    return perm[::-1, ...], lam_grid[::-1]
+
+
+def perwavelength2perfrequency(perm, lam_grid):
+    """Conversion between Wavelength- and Frequency-related Spectral Quantities.
+
+    Parameters:
+        perm (ndarray)[nlam_grid, ...]: Quantity per wavelength [?/m].
+        lam_grid (1darray)[nlam_grid]: Wavelength grid [m].
+    Returns:
+        ndarray[nlam_grid, ...]: Quantity per frequency [?/Hz].
+        1darray[nlam_grid]: Frequency grid [Hz].
+
+    """
+    c = constants.speed_of_light
+    ndim = len(perm.shape) - 1
+    shape = (perm.shape[0], ) + ndim * (1, )
+    perhz = perm * lam_grid.reshape(shape)**2 / c
+    f_grid = wavelength2frequency(lam_grid)
+    return perhz[::-1, ...], f_grid[::-1]
+
+
+def perfrequency2perwavenumber(perhz, f_grid):
+    """Conversion between Frequency- and Wavenumber-related Spectral Quantities.
+
+    Parameters:
+        perhz (ndarray)[nf_grid, ...]: Quantity per frequency [?/Hz].
+        f_grid (1darray)[nf_grid]: Frequency grid [Hz].
+    Returns:
+        ndarray[nf_grid, ...]: Quantity per wavenumber [?/1/m].
+        1darray[nf_grid]: Wavenumber grid [1/m]. 
+
+    """
+    c = constants.speed_of_light
+    perwn = perhz * c
+    wn_grid = frequency2wavenumber(f_grid)
+    return perwn, wn_grid
+
+
+def perwavenumber2perfrequency(perwn, wn_grid):
+    """Conversion between Wavenumber- and Frequency-related Spectral Quantities.
+
+    Parameters:
+        perwn (ndarray)[nwn_grid, ...]: Quantity per wavenumber [?/1/m].
+        wn_grid (1darray)[nwn_grid]: Wavenumber grid [1/m].
+    Returns:
+        ndarray[nwn_grid, ...]: Quantity per frequency [?/Hz].
+        1darray[nwn_grid]: Frequency grid [Hz].
+
+    """
+    c = constants.speed_of_light
+    perhz = perwn / c
+    f_grid = wavenumber2frequency(wn_grid)
+    return perhz, f_grid
+
+
 def stefan_boltzmann_law(T):
     """Compute Stefan Boltzmann law for given temperature
 
@@ -456,10 +532,10 @@ def landau_g_factor(x, j, s, l=None, gs=2, gl=1, case=None):
 
 
 def zeeman_splitting(gu, gl, mu, ml, H=1):
-    """ Zeeman splitting
+    r""" Zeeman splitting
 
     .. math::
-        \Delta f = \\frac{H\mu_b}{h}(g_um_u - g_lm_l),
+        \Delta f = \frac{H\mu_b}{h}(g_um_u - g_lm_l),
 
     where :math:`\mu_b` is the Bohr magneton and :math:`h` is the Planck
     constant.
@@ -486,10 +562,10 @@ def zeeman_splitting(gu, gl, mu, ml, H=1):
 
 
 def zeeman_strength(ju, jl, mu, ml):
-    """ Zeeman line strength
+    r""" Zeeman line strength
 
-    .. math:: \Delta S_{M_u,M_l} = C \\left(\\begin{array}{ccc} J_l & 1 & J_u
-                       \\\\ M_l & M_u-M_l&-M_u \\end{array}\\right)^2,
+    .. math:: \Delta S_{M_u,M_l} = C \left(\begin{array}{ccc} J_l & 1 & J_u
+                       \\ M_l & M_u-M_l&-M_u \end{array}\right)^2,
 
     where C is either 3/2 or 3/4 depending on in mu-ml is 0 or not.  In case
     the intent is to return many split lines, the size of either (jl, ju) or

@@ -92,6 +92,55 @@ class TestEM:
         x = physics.wavelength2wavenumber(100)
         assert x == 0.01
 
+    def test_perfrequency2perwavelength(self):
+        """Test conversion from a spectral quantities from per hz to per m."""
+        f_grid = np.array([4e14, 6e14, 8e14])
+        irrad = np.array([1e-12, 2e-12, 3e-12])
+        x, _ = physics.perfrequency2perwavelength(irrad, f_grid)
+        ref = np.array([6.40443063e9, 2.40166149e9, 5.33702552e8])
+        assert np.allclose(x, ref)
+
+    def test_perwavelength2perfrequency(self):
+        """Test conversion from a spectral quantities from per m to per hz."""
+        lam_grid = np.array([4e-7, 5e-7, 6e-7])
+        irrad = np.array([1e9, 2e9, 3e9])
+        x, _ = physics.perwavelength2perfrequency(irrad, lam_grid)
+        ref = np.array([[3.60249223e-12, 1.66782048e-12, 5.33702552e-13]])
+        assert np.allclose(x, ref)
+
+    def test_perfreq_perlam_conversion(self):
+        """Test conversion from a spectral quantities from per hz to per m and vice versa."""
+        f_grid = np.array([4e14, 6e14, 8e14])
+        irrad = np.array([1e-12, 2e-12, 3e-12])
+        i_perm, lam_grid = physics.perfrequency2perwavelength(irrad, f_grid)
+        i_perf, f_out = physics.perwavelength2perfrequency(i_perm, lam_grid)
+        assert np.allclose(i_perf, irrad)
+        assert np.allclose(f_out, f_grid)
+
+    def test_perfrequency2perwavenumber(self):
+        """Test conversion from a spectral quantities from per hz to per 1/m."""
+        f_grid = np.array([4e14, 6e14, 8e14])
+        irrad = np.array([1e-12, 2e-12, 3e-12])
+        x, _ = physics.perfrequency2perwavenumber(irrad, f_grid)
+        ref = np.array([0.00029979, 0.00059958, 0.00089938])
+        assert np.allclose(x, ref)
+
+    def test_perwavenumber2perfrequency(self):
+        """Test conversion from a spectral quantities from per 1/m to per hz."""
+        wn_grid = np.array([500, 1000, 1500])
+        irrad = np.array([0.003, 0.004, 0.005])
+        x, _ = physics.perwavenumber2perfrequency(irrad, wn_grid)
+        ref = np.array([1.00069229e-11, 1.33425638e-11, 1.66782048e-11])
+        assert np.allclose(x, ref) 
+
+    def test_perfreq_perwn_conversion(self):
+        """Test conversion from a spectral quantities from per hz to per 1/m and vice versa."""
+        f_grid = np.array([4e14, 6e14, 8e14])
+        irrad = np.array([1e-12, 2e-12, 3e-12])
+        i_perwn, wn_grid = physics.perfrequency2perwavenumber(irrad, f_grid)
+        i_perf, f_out = physics.perwavenumber2perfrequency(i_perwn, wn_grid)
+        assert np.allclose(i_perf, irrad)
+        assert np.allclose(f_out, f_grid)
 
 class TestThermodynamics:
     """Testing the typhon.physics.thermodynamics functions."""
@@ -151,3 +200,8 @@ class TestThermodynamics:
         """Test conversion of VMR to specific humidity."""
         q = physics.vmr2specific_humidity(0.04)
         assert np.isclose(q, 0.025261087474946833)
+
+    def test_water_vapor_pressure2specific_humidity(self):
+        """Test conversion of wvp to specific humidity."""
+        q = physics.water_vapor_pressure2specific_humidity(2338, 101300)
+        assert np.isclose(q, 0.01448208036795962)

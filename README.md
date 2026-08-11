@@ -1,13 +1,13 @@
 [![PyPI version](https://badge.fury.io/py/typhon.svg)](https://badge.fury.io/py/typhon)
-[![Anaconda-Server Badge](https://anaconda.org/rttools/typhon/badges/installer/conda.svg)](https://anaconda.org/rttools/typhon)
+[![Conda version](https://anaconda.org/rttools/typhon/badges/version.svg)](https://anaconda.org/rttools/typhon)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1300318.svg)](https://doi.org/10.5281/zenodo.1300318)
-[![Test](https://github.com/atmtools/typhon/workflows/Test/badge.svg?branch=master)](https://github.com/atmtools/typhon/commits/master)
+![Test](https://github.com/atmtools/typhon/actions/workflows/build-test.yml/badge.svg)
 
 # typhon - Tools for atmospheric research
 
 ## Installation
-Typhon requires Python version 3.6 or higher. The recommended way to get Python
-is through [Anaconda]. But of course, any other Python distribution is also
+Typhon requires Python version 3.12 or higher. The recommended way to get Python
+is through [Miniforge3]. But of course, any other Python distribution is also
 working.
 
 ### Stable release
@@ -53,5 +53,5 @@ A recent build of the documentation is accessible
 Kindly note that bleeding edge features might not be covered.
 
 [Sphinx]: http://www.sphinx-doc.org
-[Anaconda]: https://www.continuum.io/downloads
+[Miniforge3]: https://github.com/conda-forge/miniforge#miniforge
 [pytest]: https://docs.pytest.org/

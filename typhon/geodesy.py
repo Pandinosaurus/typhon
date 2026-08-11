@@ -159,7 +159,7 @@ class ellipsoidmodels():
 
 
 def ellipsoid_r_geocentric(ellipsoid, lat):
-    """Geocentric radius of a reference ellipsoid.
+    r"""Geocentric radius of a reference ellipsoid.
 
     Gives the distance from the Earth's centre and the reference ellipsoid
     as a function of geo\ **centric** latitude.
@@ -192,7 +192,7 @@ def ellipsoid_r_geocentric(ellipsoid, lat):
 
 
 def ellipsoid_r_geodetic(ellipsoid, lat):
-    """Geodetic radius of a reference ellipsoid.
+    r"""Geodetic radius of a reference ellipsoid.
 
     Gives the distance from the Earth's centre and the reference ellipsoid
     as a function of geo\ **detic** latitude.

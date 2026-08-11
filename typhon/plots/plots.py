@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import FuncFormatter
-from matplotlib.cm import get_cmap
+from matplotlib.pyplot import get_cmap
 import scipy.stats as stats
 
 from typhon.plots import formatter
@@ -638,7 +638,7 @@ def profile_z(z, x, ax=None, **kwargs):
     ax.set_ylim(zmin, zmax)
 
     # Label and format for yaxis.
-    if ax.is_first_col():
+    if ax.get_subplotspec().is_first_col():
         ax.set_ylabel('Height [km]')
 
     # Actual plot.
@@ -844,7 +844,7 @@ def colored_bars(x, y, c=None, cmap=None, vmin=None, vmax=None, ax=None,
         # Add a colorbar to the figure.
         fig, ax = plt.subplots()
         sm, bars = colored_bars(x, y, cmap='seismic')
-        cb = fig.colorbar(sm)
+        cb = fig.colorbar(sm, ax=ax)
 
         # Pass different values for coloring (here, x-values).
         fig, ax = plt.subplots()

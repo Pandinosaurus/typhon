@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from copy import copy
 from datetime import datetime
 from functools import wraps
@@ -618,6 +618,39 @@ class HDF5(FileHandler):
         return _xarray_rename_fields(dataset, mapping)
 
 
+def _get_group_dimensions(group):
+    """Collect all dimensions visible to a netCDF4 group.
+
+    In current netCDF4 versions, ``group.dimensions`` returns only the
+    dimensions *defined* in the given group, not those inherited from its
+    ancestors. This restores the old behaviour by walking up the ``parent``
+    chain from ``group`` to the root and collecting every dimension into an
+    :class:`~collections.OrderedDict`.
+
+    Dimensions defined locally take precedence over same-named dimensions
+    defined in an ancestor group (local-first ordering), mirroring the
+    shadowing semantics the rest of the NetCDF4 handler relies on.
+
+    Args:
+        group: A :class:`netCDF4.Group` or :class:`netCDF4.Dataset` (root).
+
+    Returns:
+        An :class:`~collections.OrderedDict` mapping dimension names to
+        :class:`netCDF4.Dimension` objects, with local dimensions first.
+    """
+    dims = OrderedDict()
+    current = group
+    while current is not None:
+        for name, dim in current.dimensions.items():
+            if name not in dims:
+                dims[name] = dim
+        parent = getattr(current, "parent", None)
+        if parent is current or parent is None:
+            break
+        current = parent
+    return dims
+
+
 class NetCDF4(FileHandler):
     """File handler that can load / store xarray.Dataset from / to NetCDF4
 
@@ -685,7 +718,7 @@ class NetCDF4(FileHandler):
         return _xarray_rename_fields(dataset, mapping)
 
     @staticmethod
-    def _get_dimension_name(ds, group, path, dim):
+    def _get_dimension_name(ds, group, path, dim, group_dims):
         # If the dimension is defined in the subgroup, use NOT the one of the
         # parent group:
         if dim in group.variables or path == "":
@@ -703,10 +736,10 @@ class NetCDF4(FileHandler):
                 ancestor_dim = "/".join(
                     ancestor_groups[1:len(ancestor_groups) - i] + [dim])
 
-            ancestor_size = ds.dims.get(ancestor_dim, None)
+            ancestor_size = ds.sizes.get(ancestor_dim, None)
 
             if ancestor_size is not None \
-                    and group.dimensions[dim].size == ancestor_size:
+                    and group_dims[dim].size == ancestor_size:
                 # use the ancestor dimension:
                 return ancestor_dim
 
@@ -726,9 +759,15 @@ class NetCDF4(FileHandler):
         # group, then it is valid for this group only. Otherwise, the
         # dimension from the parent group is taken (if it suits with name and
         # size)
+        # In current netCDF4 versions, group.dimensions only returns the
+        # dimensions *defined* in this group, not those inherited from parent
+        # groups. We collect all visible dimensions (local + ancestors) so
+        # that variables using an inherited dimension are mapped correctly.
+        group_dims = _get_group_dimensions(group)
         dim_map = {
-            dim: NetCDF4._get_dimension_name(ds, group, path, dim)
-            for dim in group.dimensions
+            dim: NetCDF4._get_dimension_name(
+                ds, group, path, dim, group_dims)
+            for dim in group_dims
         }
 
         # Load variables:
@@ -834,6 +873,56 @@ class NetCDF4(FileHandler):
         if "/" not in path:
             return None, path
         return path.rsplit("/", 1)
+
+    def _ensure_local_filesystem(self, file_info):
+        if not isinstance(file_info.file_system, LocalFileSystem):
+            raise NotImplementedError(
+                    f"File handler {type(self).__name__:s} can only "
+                    "read from local file system, not from "
+                    f"{str(type(file_info.file_system).__name__)}. "
+                    "Use FSNetCDF instead.")
+
+
+class FSNetCDF(FileHandler):
+    """File handler for reading NetCDF files via alternate file systems.
+
+    Alternative to the NetCDF file handler for reading files from
+    alternative file systems, such as remote file systemss.  Does not
+    support writing or multi-group files.
+
+    Usage example with fileset::
+
+        fs = FileSet(
+                path=(
+                    "noaa-goes16/GLM-L2-LCFA/{year}/{doy}/{hour}/"
+                    "OR_GLM-L2-LCFA_G16_s{year}{doy}{hour}{minute}{second}*_"
+                    "e{end_year}{end_doy}{end_hour}{end_minute}{end_second}*_c*.nc"),
+                fs=s3fs.S3FileSystem(anon=True),
+                handler=FSNetCDF())
+
+        finf = fs.find_closest(datetime.datetime(2021, 11, 10, 10))
+        fs.read(finf)
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._open = []
+
+    @expects_file_info()
+    def read(self, file_info, fields=None, mapping=None, **kwargs):
+        """Read possibly remote NetCDF file."""
+        fp = file_info.file_system.open(file_info.path)
+        ds = xr.open_dataset(fp, engine="h5netcdf")
+        self._open.append(ds)
+        return ds
+
+    def close_all(self):
+        """Close all open files."""
+        while self._open:
+            self._open.pop(0).close()
+
+    def __del__(self):
+        self.close_all()
 
 
 class Plotter(FileHandler):

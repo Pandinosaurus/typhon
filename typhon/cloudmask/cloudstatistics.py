@@ -110,7 +110,7 @@ def iorg(cloudmask, connectivity=1):
     """Calculate the cloud cluster index 'I_org'.
 
     See also: 
-        :func:`scipy.integrate.trapz`:
+        :func:`scipy.integrate.trapezoid`:
             Used to calculate the integral along the given axis using
             the composite trapezoidal rule.
 
@@ -138,7 +138,7 @@ def iorg(cloudmask, connectivity=1):
     lamb = nn.size / cloudmask.size
     nncdf_poisson = 1 - np.exp(-lamb * np.pi * nn_sorted ** 2)
 
-    return sc.integrate.trapz(y=nncdf, x=nncdf_poisson)
+    return sc.integrate.trapezoid(y=nncdf, x=nncdf_poisson)
 
 
 def scai(cloudmask, connectivity=1):

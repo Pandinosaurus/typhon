@@ -23,12 +23,12 @@ from scipy.interpolate import CubicSpline
 ################################################################################
 
 try:
-    import typhon.retrieval.qrnn.models.keras as keras
-    backend = keras
+    import typhon.retrieval.qrnn.models.pytorch as pytorch
+    backend = pytorch
 except Exception as e:
     try:
-        import typhon.retrieval.qrnn.models.pytorch as pytorch
-        backend = pytorch
+        import typhon.retrieval.qrnn.models.keras as keras
+        backend = keras
     except:
         raise Exception("Couldn't import neither Keras nor Pytorch "
                         "one of them must be available to use the QRNN"
@@ -266,8 +266,10 @@ class QRNN:
         The training is performed on the provided training data and an
         optionally-provided validation set. Training can use the following
         augmentation methods:
-            - Gaussian noise added to input
-            - Adversarial training
+
+        - Gaussian noise added to input
+        - Adversarial training
+
         The learning rate is decreased gradually when the validation or training
         loss did not decrease for a given number of epochs.
 
@@ -485,7 +487,7 @@ class QRNN:
             Array containing the posterior means for the provided inputs.
         """
         y_pred, qs = self.cdf(x)
-        mus = y_pred[:, -1] - np.trapz(qs, x=y_pred)
+        mus = y_pred[:, -1] - np.trapezoid(qs, x=y_pred)
         return mus
 
     @staticmethod
@@ -533,7 +535,7 @@ class QRNN:
         qs[0, 0] = 0.0
         qs[0, -1] = 1.0
 
-        return np.trapz((qs - ind)**2.0, y_cdf)
+        return np.trapezoid((qs - ind)**2.0, y_cdf)
 
     def evaluate_crps(self, x_test, y_test):
         r"""
@@ -598,11 +600,14 @@ class QRNN:
 
             The loaded QRNN object.
         """
-        with open(path, 'rb') as f:
+        with open(path + ".pkl", 'rb') as f:
             qrnn = pickle.load(f)
+
+        with open(path + ".model", 'rb') as f:
             backend = importlib.import_module(qrnn.backend)
             model = backend.load_model(f, qrnn.quantiles)
             qrnn.model = model
+
         return qrnn
 
     def save(self, path):
@@ -619,11 +624,12 @@ class QRNN:
                        store the model.
 
         """
-        f = open(path, "wb")
-        pickle.dump(self, f)
-        backend = importlib.import_module(self.backend)
-        backend.save_model(f, self.model)
-        f.close()
+        with open(path + ".pkl", 'wb') as f:
+            pickle.dump(self, f)
+
+        with open(path + ".model", 'wb') as f:
+            backend = importlib.import_module(self.backend)
+            backend.save_model(f, self.model)
 
 
     def __getstate__(self):
